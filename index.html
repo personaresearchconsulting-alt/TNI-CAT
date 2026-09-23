@@ -449,8 +449,14 @@ if(!localStorage.getItem("layoutCleaned_v2")){
     localStorage.setItem("layoutCleaned_v2", "true");
 }
 
-// KUMPULAN 50 PASSWORD - ARMY001 SAMPAI ARMY050
-const passwordList = Array.from({ length: 50 }, (_, i) => `ARMY${String(i + 1).padStart(3, '0')}`);
+// PENULISAN MANUAL PASSWORD ARMY001 SAMPAI ARMY050
+const passwordList = [
+    'ARMY001', 'EGA12', 'ARMY003', 'ARMY004', 'ARMY005', 'ARMY006', 'ARMY007', 'ARMY008', 'ARMY009', 'ARMY010',
+    'ARMY011', 'ARMY012', 'ARMY013', 'ARMY014', 'ARMY015', 'ARMY016', 'ARMY017', 'ARMY018', 'ARMY019', 'ARMY020',
+    'ARMY021', 'ARMY022', 'ARMY023', 'ARMY024', 'ARMY025', 'ARMY026', 'ARMY027', 'ARMY028', 'ARMY029', 'ARMY030',
+    'ARMY031', 'ARMY032', 'ARMY033', 'ARMY034', 'ARMY035', 'ARMY036', 'ARMY037', 'ARMY038', 'ARMY039', 'ARMY040',
+    'ARMY041', 'ARMY042', 'ARMY043', 'ARMY044', 'ARMY045', 'ARMY046', 'ARMY047', 'ARMY048', 'ARMY049', 'ARMY050'
+];
 
 const loginBtn = document.getElementById("loginBtn");
 const passwordInput = document.getElementById("passwordInput");
@@ -472,16 +478,20 @@ passwordInput.addEventListener("keydown", (e) => {
 });
 
 function loginSystem(){
-const input = passwordInput.value.trim().toUpperCase();
+const input = passwordInput.value.trim();
 
-if(!passwordList.includes(input)){
+// Pengecekan tidak sensitif huruf besar/kecil (bisa army001, Army001, ARMY001, dll)
+const isValid = passwordList.some(pass => pass.toLowerCase() === input.toLowerCase());
+
+if(!isValid){
 showPopup("Password salah.");
 return;
 }
 
-localStorage.setItem("loggedInUser", input);
+const formattedInput = input.toUpperCase();
+localStorage.setItem("loggedInUser", formattedInput);
 showPopup("Login berhasil.");
-openDashboard(input);
+openDashboard(formattedInput);
 }
 
 function openDashboard(user){
@@ -491,7 +501,7 @@ welcomeText.innerHTML=`Peserta Aktif: <b>${user}</b>`;
 }
 
 const loggedUser = localStorage.getItem("loggedInUser");
-if(loggedUser && passwordList.includes(loggedUser.toUpperCase())){
+if(loggedUser && passwordList.some(pass => pass.toLowerCase() === loggedUser.toLowerCase())){
 openDashboard(loggedUser.toUpperCase());
 }
 
