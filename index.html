@@ -188,19 +188,6 @@ gap:15px;
 flex-wrap:wrap;
 }
 
-.count-box{
-padding:12px 20px;
-border-radius:14px;
-background:#f4f1ea;
-color:#1a1a1a;
-font-weight:600;
-font-size: 14px;
-border:1px solid #e5e5e0;
-display: flex;
-align-items: center;
-gap: 8px;
-}
-
 .logout-btn{
 padding:12px 22px;
 background:#1a1a1a;
@@ -385,7 +372,6 @@ margin-top: 40px;
 <p id="welcomeText" style="color:#666666; margin-top:4px; font-size: 14px;"></p>
 </div>
 <div class="header-right">
-<div class="count-box" id="countdown">Memuat Sisa Waktu...</div>
 <button class="logout-btn" id="logoutBtn">Keluar</button>
 </div>
 </div>
@@ -463,17 +449,8 @@ if(!localStorage.getItem("layoutCleaned_v2")){
     localStorage.setItem("layoutCleaned_v2", "true");
 }
 
-// MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXC1m2C3j5RyBg9uNNjdcB7WZpSntBT_F_AcOv0mtfluMdxLhHyCp4N3pQi8mEeuZy/exec";
-
-// KUMPULAN 50 PASSWORD - AWALAN DIUBAH MENJADI ARMY
-const passwordList = [
-"ARMY1Y2", "ARMY3B4", "ARMY5C6", "ARMY7X8", "ARMY9Y1", "ARMY2Z3", "ARMY4K5", "ARMY6L7", "ARMY8M9", "ARMY1N2",
-"ARMY3P4", "ARMY5Q6", "ARMY7R8", "ARMY9S1", "ARMY2T3", "ARMY4V5", "ARMY6W7", "ARMY8X9", "ARMY1Y2", "ARMY3Z4",
-"ARMY5A6", "ARMY7B8", "ARMY9C1", "ARMY2D3", "ARMY4E5", "ARMY6F7", "ARMY8G9", "ARMY1H2", "ARMY3J4", "ARMY5K6",
-"ARMY7L8", "ARMY9M1", "ARMY2N3", "ARMY4P5", "ARMY6Q7", "ARMY8R9", "ARMY1S2", "ARMY3T4", "ARMY5U6", "ARMY7V8",
-"ARMY9W1", "ARMY2X3", "ARMY4Y5", "ARMY6Z7", "ARMY8A9", "ARMY1B2", "ARMY3C4", "ARMY5D6", "ARMY7E8", "ARMY9F1"
-];
+// KUMPULAN 50 PASSWORD - ARMY001 SAMPAI ARMY050
+const passwordList = Array.from({ length: 50 }, (_, i) => `ARMY${String(i + 1).padStart(3, '0')}`);
 
 const loginBtn = document.getElementById("loginBtn");
 const passwordInput = document.getElementById("passwordInput");
@@ -481,27 +458,6 @@ const loginPage = document.getElementById("loginPage");
 const dashboard = document.getElementById("dashboard");
 const popup = document.getElementById("popup");
 const welcomeText = document.getElementById("welcomeText");
-const countdown = document.getElementById("countdown");
-const loadingScreen = document.getElementById("loadingScreen");
-
-function getDeviceId(){
-const rawData = [
-navigator.userAgent, navigator.platform, navigator.language,
-screen.width, screen.height, window.devicePixelRatio,
-Intl.DateTimeFormat().resolvedOptions().timeZone,
-navigator.hardwareConcurrency || "cpu"
-].join("###");
-return generateHash(rawData);
-}
-
-function generateHash(str){
-let hash = 0;
-for(let i=0;i<str.length;i++){
-hash=((hash<<5)-hash)+str.charCodeAt(i);
-hash|=0;
-}
-return "PRC-"+Math.abs(hash);
-}
 
 function showPopup(text){
 popup.innerText=text;
@@ -511,7 +467,11 @@ setTimeout(()=>{ popup.classList.add("hidden"); },2500);
 
 loginBtn.addEventListener("click",loginSystem);
 
-async function loginSystem(){
+passwordInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") loginSystem();
+});
+
+function loginSystem(){
 const input = passwordInput.value.trim().toUpperCase();
 
 if(!passwordList.includes(input)){
@@ -519,62 +479,20 @@ showPopup("Password salah.");
 return;
 }
 
-loadingScreen.style.display = "flex";
-const deviceId = getDeviceId();
-
-try {
-const response = await fetch(`${SCRIPT_URL}?password=${input}&deviceId=${deviceId}`);
-const result = await response.json();
-
-if(result.status === "success"){
 localStorage.setItem("loggedInUser", input);
-localStorage.setItem("userFirstLogin", result.firstLogin);
 showPopup("Login berhasil.");
-openDashboard(input, result.firstLogin);
-} else {
-showPopup(result.message);
-loadingScreen.style.display = "none";
-}
-} catch (error) {
-showPopup("Gagal sinkronisasi data online. Pastikan Web App Script aktif.");
-loadingScreen.style.display = "none";
-}
+openDashboard(input);
 }
 
-function openDashboard(user, firstLoginTime){
+function openDashboard(user){
 loginPage.classList.add("hidden");
 dashboard.classList.remove("hidden");
-loadingScreen.style.display = "none";
 welcomeText.innerHTML=`Peserta Aktif: <b>${user}</b>`;
-startCountdown(Number(firstLoginTime));
-}
-
-let countdownInterval=null;
-function startCountdown(firstLoginTime){
-clearInterval(countdownInterval);
-countdownInterval=setInterval(()=>{
-const end = firstLoginTime + (30*24*60*60*1000);
-const diff = end - Date.now();
-
-if(diff <= 0){
-countdown.innerText="Expired";
-clearInterval(countdownInterval);
-localStorage.clear();
-setTimeout(()=>{ location.reload(); }, 2000);
-return;
-}
-
-const days=Math.floor(diff/(1000*60*60*24));
-const hours=Math.floor((diff/(1000*60*60))%24);
-const minutes=Math.floor((diff/(1000*60))%60);
-countdown.innerText=`Sisa Aktif: ${days}H ${hours}J ${minutes}M`;
-},1000);
 }
 
 const loggedUser = localStorage.getItem("loggedInUser");
-const localFirstLogin = localStorage.getItem("userFirstLogin");
-if(loggedUser && localFirstLogin && passwordList.includes(loggedUser.toUpperCase())){
-openDashboard(loggedUser.toUpperCase(), localFirstLogin);
+if(loggedUser && passwordList.includes(loggedUser.toUpperCase())){
+openDashboard(loggedUser.toUpperCase());
 }
 
 document.getElementById("logoutBtn").addEventListener("click",()=>{
