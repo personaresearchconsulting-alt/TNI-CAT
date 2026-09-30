@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tes Kreaplin CAT - Persona Research & Consulting</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1a252f; --accent-red: #c0392b; --accent-gold: #d35400; --bg-soft: #f8f9fa; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; background-color: #ffffff; user-select: none; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* --- LOGIN SCREEN --- */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .login-card { max-width: 800px; width: 100%; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; border-top: 5px solid var(--accent-red); }
+        .brand-name { color: var(--primary); font-weight: 900; font-size: 24px; letter-spacing: 1px; margin-bottom: 30px; text-transform: uppercase; }
+        .petunjuk-title { color: var(--accent-red); font-weight: 900; font-size: 16px; text-align: left; margin-bottom: 25px; text-transform: uppercase; }
+        .instruction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; text-align: left; margin-bottom: 30px; }
+        .ins-item { border-left: 4px solid var(--accent-red); padding-left: 15px; min-height: 70px; }
+        .ins-item h4 { font-weight: 900; margin-bottom: 5px; font-size: 15px; color: #000; }
+        .ins-item p { font-size: 13px; color: #444; line-height: 1.5; }
+        .speaker-note { color: var(--accent-gold); font-size: 13px; font-weight: 700; margin-bottom: 20px; }
+        .btn-cek { background: var(--accent-gold); color: white; border: none; padding: 15px; width: 100%; font-weight: 800; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; }
+        .btn-mulai { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; font-weight: 800; border-radius: 8px; cursor: pointer; font-size: 14px; text-transform: uppercase; }
+
+        /* --- BOARD & INTERFACE --- */
+        header { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; z-index: 100; border-bottom: 4px solid var(--accent-red); }
+        .timer-box { font-family: monospace; font-size: 1.8em; color: #e74c3c; font-weight: 900; background: #fff; padding: 2px 12px; border-radius: 6px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .container { flex: 1; display: flex; overflow: hidden; align-items: flex-end; position: relative; background: white; padding-left: 45px; }
+        
+        /* PENOMORAN UTAMA GLOBAL (FIXED DI KIRI, TIDAK AKAN PERNAH HILANG/BERGESER) */
+        .global-number-ruler { 
+            position: fixed; 
+            top: 67px; /* Di bawah header */
+            left: 0; 
+            width: 45px; 
+            height: calc(100vh - 67px); 
+            background: #f8f9fa; 
+            border-right: 2px solid #bdc3c7; 
+            z-index: 100; 
+            display: flex; 
+            flex-direction: column-reverse; 
+            padding-bottom: 20px;
+        }
+        .ruler-num { 
+            font-size: 12px; 
+            font-weight: 900; 
+            color: #1a252f !important; /* WARNA NAVY TEGAS */
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-bottom: 1px solid #dcdde1; 
+            flex-shrink: 0; 
+        }
+
+        .lajur-frame { background: white; min-width: 90px; height: 100vh; border-right: 1px solid #ddd; flex-shrink: 0; opacity: 0.25; transition: 0.3s ease; display: flex; position: relative; overflow: hidden; }
+        .lajur-frame.active { opacity: 1; background: #fff; border-left: 2px solid #b2bec3; border-right: 2px solid #b2bec3; }
+
+        /* VIEWPORT UTAMA */
+        .lajur-viewport { flex: 1; height: 100%; position: relative; overflow: hidden; }
+        
+        .lajur-scroll-box { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            display: flex; 
+            transition: transform 0.15s ease-out; 
+            padding-bottom: 20px; 
+        }
+
+        /* KOLOM ANGKA (WARNA HITAM KHUSUS SOAL) */
+        .number-column { flex: 1; display: flex; flex-direction: column-reverse; background: white; position: relative; }
+        
+        .item { font-size: 22px; font-weight: 800; text-align: center; height: 40px; color: #000000 !important; /* WARNA HITAM UNTUK SOAL */ position: relative; display: flex; justify-content: center; align-items: center; }
+        .ans-preview { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #27ae60; font-weight: 900; }
+        
+        /* KOTAK MERAH MENYATU UNTUK SEPASANG ANGKA (BOTTOM -> TOP) */
+        .active-unified-box {
+            position: absolute;
+            left: 3px;
+            right: 3px;
+            height: 80px; 
+            border: 3px solid var(--accent-red);
+            background-color: rgba(192, 57, 43, 0.08);
+            border-radius: 6px;
+            pointer-events: none;
+            z-index: 10;
+            transition: bottom 0.15s ease-out;
+        }
+
+        /* KEYPAD */
+        .keypad { display: grid; grid-template-columns: repeat(3, 65px); gap: 10px; background: #2c3e50; padding: 15px; border-radius: 12px; position: fixed; z-index: 2000; right: 40px; top: 130px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .keypad-handle { grid-column: span 3; height: 24px; background: #1a252f; border-radius: 6px; cursor: move; display: flex; align-items: center; justify-content: center; }
+        .keypad-handle span { font-size: 9px; color: #bdc3c7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; pointer-events: none; }
+        .key { width: 65px; height: 65px; background: #34495e; color: white; border: 1px solid #4e6d8c; border-radius: 8px; font-size: 22px; font-weight: 700; cursor: pointer; transition: background 0.1s; }
+        .key:active { background: var(--accent-red); }
+
+        /* RESULT SCREEN */
+        #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 6000; padding: 30px; overflow-y: auto; }
+        .report-header { text-align: center; margin-bottom: 25px; border-bottom: 4px solid var(--primary); padding-bottom: 15px; }
+        .persona-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .persona-table th { background: var(--primary); color: white; padding: 12px; font-size: 13px; text-transform: uppercase; }
+        .persona-table td { border: 1px solid #dcdde1; padding: 10px; text-align: center; font-weight: 700; font-size: 13px; }
+        .category-row { background: #f1f2f6; color: var(--accent-red); font-weight: 900 !important; }
+        .detail-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }
+        .detail-table th, .detail-table td { border: 1px solid #dfe4ea; padding: 7px; text-align: center; }
+        footer { background: white; padding: 10px; text-align: center; font-size: 11px; font-weight: 800; border-top: 1px solid #eee; color: #7f8c8d; }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+<!-- PENOMORAN UTAMA GLOBAL (DIPINDAH KELUAR BOARD AGAR SELAMANYA MENETAP DI KIRI LAYAR) -->
+<div class="global-number-ruler" id="global-ruler"></div>
+
+<div id="login-screen">
+    <div class="login-card">
+        <h1 class="brand-name">TES KREAPLIN — PERSONA RESEARCH & CONSULTING</h1>
+        <div class="petunjuk-title">PETUNJUK PENGERJAAN KREAPLIN (BAWAH KE ATAS):</div>
+        <div class="instruction-grid">
+            <div class="ins-item"><h4>1. Arah Pengerjaan</h4><p>Penjumlahan dilakukan dari <b>BAWAH KE ATAS</b>. Jumlahkan 2 angka berdekatan secara vertikal mulai dari baris bawah bergerak naik, lalu ketik angka satuannya.</p></div>
+            <div class="ins-item"><h4>2. Durasi Kolom</h4><p>Terdapat <b>50 Kolom</b>. Setiap kolom dikerjakan tepat selama <b>15 detik</b> sebelum berpindah otomatis.</p></div>
+            <div class="ins-item"><h4>3. Tanpa Tombol Next</h4><p>Sistem akan menyimpan jawaban dan memindahkan lajur secara otomatis begitu waktu 15 detik habis.</p></div>
+            <div class="ins-item"><h4>4. Faktor Penilaian</h4><p>Evaluasi mencakup Kecepatan (Panker), Ketetapan/Ritme (Janker), Ketahanan (Hanker), dan Keajegan (Tianker).</p></div>
+        </div>
+        <p class="speaker-note">Pastikan Volume Speaker Anda Aktif untuk Mendengar Alarm Bunyi Pindah Lajur.</p>
+        <button class="btn-cek" onclick="playBeep(600, 0.2)">📢 KLIK UNTUK TES SUARA (CEK SPEAKER)</button>
+        <button class="btn-mulai" onclick="startApp()">SAYA MENGERTI, MULAI TES</button>
+    </div>
+</div>
+
+<header>
+    <div style="font-weight:900; font-size:15px;">TES KREAPLIN - PRC</div>
+    <div id="timer" class="timer-box">00:15</div>
+    <div style="font-weight:900; font-size:15px;">KOLOM: <span id="lajur-count">1</span> / 50</div>
+</header>
+
+<div class="container" id="board"></div>
+
+<div id="keypad" class="keypad">
+    <div class="keypad-handle" id="drag-area"><span>Klik Tahan Geser</span></div>
+    <button class="key" onclick="inputAnswer(1)">1</button><button class="key" onclick="inputAnswer(2)">2</button><button class="key" onclick="inputAnswer(3)">3</button>
+    <button class="key" onclick="inputAnswer(4)">4</button><button class="key" onclick="inputAnswer(5)">5</button><button class="key" onclick="inputAnswer(6)">6</button>
+    <button class="key" onclick="inputAnswer(7)">7</button><button class="key" onclick="inputAnswer(8)">8</button><button class="key" onclick="inputAnswer(9)">9</button>
+    <button class="key" style="grid-column: span 3; width: 100%" onclick="inputAnswer(0)">0</button>
+</div>
+
+<footer>PERSONA RESEARCH & CONSULTING | DIGITAL ASSESSMENT SYSTEM</footer>
+
+<div id="result-screen">
+    <div id="pdf-content" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+        <div class="report-header">
+            <h1 style="color: var(--primary); font-weight: 900; font-size: 22px;">LAPORAN ANALISIS HASIL TES KREAPLIN</h1>
+            <p style="font-size: 13px; color: #555;">Persona Research & Consulting | Standardized Psychometric Scoring</p>
+        </div>
+        <table class="persona-table">
+            <thead><tr><th>PARAMETER SKORING (FAKTOR)</th><th>NILAI / SKOR</th><th>KATEGORI ANALISIS</th></tr></thead>
+            <tbody id="main-summary-body"></tbody>
+        </table>
+        <div style="height: 280px; margin: 20px 0;"><canvas id="staminaChart"></canvas></div>
+        <h3 style="margin: 20px 0 10px 0; border-left: 5px solid var(--accent-red); padding-left: 10px; font-size: 14px;">RINCIAN PRODUKTIVITAS PER KOLOM (BOTTOM → TOP)</h3>
+        <table class="detail-table">
+            <thead><tr style="background: #f1f2f6;"><th>KOLOM</th><th>JUMLAH KERJA</th><th>SALAH</th><th>TERLAMPAUI</th><th>BENAR</th><th>AKURASI (%)</th></tr></thead>
+            <tbody id="detail-lajur-body"></tbody>
+        </table>
+        <div style="margin-top: 25px; padding: 18px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+            <h4 style="font-weight: 900; color: var(--primary); font-size: 13px;">KESIMPULAN & INTERPRETASI PSIKOLOGIS:</h4>
+            <p id="txt-kesimpulan" style="margin-top: 8px; line-height: 1.5; font-size: 12px; color: #333;"></p>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 35px; padding-bottom: 40px;">
+        <button onclick="downloadPDF()" style="padding:14px 35px; background:#27ae60; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:900; font-size:13px;">UNDUH LAPORAN (PDF)</button>
+        <button onclick="location.reload()" style="padding:14px 35px; background:var(--primary); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:900; font-size:13px; margin-left:10px;">ULANGI TES</button>
+    </div>
+</div>
+
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 600, duration = 0.15) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const TOTAL_KOLOM = 50, TIME_PER_KOLOM = 15;
+    let currentL = 0, currentB = 0, secondsLeft = TIME_PER_KOLOM, timerRef, testData = [];
+
+    function startApp() { 
+        document.getElementById('login-screen').style.display = 'none'; 
+        initGlobalRuler();
+        initBoard(); 
+        startTimer(); 
+    }
+
+    function initGlobalRuler() {
+        const ruler = document.getElementById('global-ruler');
+        ruler.innerHTML = '';
+        for(let r = 1; r <= 59; r++) {
+            const rNum = document.createElement('div');
+            rNum.className = 'ruler-num';
+            rNum.innerText = r;
+            ruler.appendChild(rNum);
+        }
+    }
+
+    function initBoard() {
+        const board = document.getElementById('board'); 
+        board.innerHTML = '';
+
+        for (let l = 0; l < TOTAL_KOLOM; l++) {
+            testData[l] = { total: 0, correct: 0, wrong: 0, skipped: 0, answers: [] };
+            const frame = document.createElement('div'); 
+            frame.className = 'lajur-frame'; 
+            frame.id = `frame-${l}`;
+
+            const viewport = document.createElement('div');
+            viewport.className = 'lajur-viewport';
+
+            const scrollBox = document.createElement('div');
+            scrollBox.className = 'lajur-scroll-box';
+            scrollBox.id = `scrollbox-${l}`;
+
+            const numCol = document.createElement('div');
+            numCol.className = 'number-column';
+            numCol.id = `content-${l}`;
+
+            const unifiedBox = document.createElement('div');
+            unifiedBox.className = 'active-unified-box';
+            unifiedBox.id = `box-${l}`;
+            numCol.appendChild(unifiedBox);
+
+            let numbers = [];
+            for(let i = 0; i < 60; i++) numbers.push(Math.floor(Math.random() * 9) + 1);
+            
+            for (let b = 0; b < numbers.length; b++) {
+                const item = document.createElement('div'); 
+                item.className = 'item'; 
+                item.id = `L${l}-B${b}`;
+                item.innerHTML = `${numbers[b]}<div class="ans-preview" id="A${l}-B${b}"></div>`;
+                if (b < numbers.length - 1) {
+                    item.dataset.ans = (numbers[b] + numbers[b+1]) % 10;
+                }
+                numCol.appendChild(item);
+            }
+
+            scrollBox.appendChild(numCol);
+            viewport.appendChild(scrollBox);
+            frame.appendChild(viewport); 
+            board.appendChild(frame);
+        }
+        updateVisuals();
+    }
+
+    function startTimer() {
+        clearInterval(timerRef); 
+        secondsLeft = TIME_PER_KOLOM;
+        document.getElementById('timer').innerText = `00:${secondsLeft.toString().padStart(2,'0')}`;
+        timerRef = setInterval(() => {
+            secondsLeft--;
+            document.getElementById('timer').innerText = `00:${secondsLeft.toString().padStart(2,'0')}`;
+            if (secondsLeft <= 3 && secondsLeft > 0) playBeep(800, 0.1);
+            if (secondsLeft <= 0) {
+                autoFinishKolom();
+            }
+        }, 1000);
+    }
+
+    function autoFinishKolom() {
+        const frameContent = document.getElementById(`content-${currentL}`);
+        const totalItemsInCol = frameContent.querySelectorAll('.item').length - 1;
+        while(currentB < totalItemsInCol && document.getElementById(`L${currentL}-B${currentB+1}`) && document.getElementById(`L${currentL}-B${currentB+1}`).dataset.ans !== undefined) {
+            if(!testData[currentL].answers[currentB]) {
+                testData[currentL].skipped++;
+            }
+            currentB++;
+        }
+        nextKolom();
+    }
+
+    function updateVisuals() {
+        document.querySelectorAll('.lajur-frame').forEach(f => f.classList.remove('active'));
+        const activeFrame = document.getElementById(`frame-${currentL}`);
+        if(activeFrame) {
+            activeFrame.classList.add('active');
+            document.getElementById('board').scrollTo({ 
+                left: activeFrame.offsetLeft - (window.innerWidth / 2) + 50, 
+                behavior: 'smooth' 
+            });
+            
+            const box = document.getElementById(`box-${currentL}`);
+            if(box) {
+                box.style.bottom = (currentB * 40) + 'px';
+            }
+
+            const scrollBoxEl = document.getElementById(`scrollbox-${currentL}`);
+            if(scrollBoxEl) {
+                let scrollOffset = Math.max(0, (currentB - 2) * 40);
+                scrollBoxEl.style.transform = `translateY(${scrollOffset}px)`;
+            }
+        }
+    }
+
+    function inputAnswer(val) {
+        const bottomItem = document.getElementById(`L${currentL}-B${currentB}`);
+        const topItem = document.getElementById(`L${currentL}-B${currentB+1}`);
+        if(!bottomItem || !topItem || bottomItem.dataset.ans === undefined) return;
+        
+        document.getElementById(`A${currentL}-B${currentB}`).innerText = val;
+        testData[currentL].total++;
+        testData[currentL].answers[currentB] = val;
+        
+        if(val == bottomItem.dataset.ans) {
+            testData[currentL].correct++;
+        } else {
+            testData[currentL].wrong++;
+        }
+        
+        currentB++;
+        
+        const maxB = document.querySelectorAll(`#content-${currentL} .item`).length - 2;
+        if(currentB > maxB) {
+            nextKolom();
+        } else {
+            updateVisuals();
+        }
+    }
+
+    function nextKolom() {
+        if(currentL < TOTAL_KOLOM - 1) { 
+            currentL++; 
+            currentB = 0; 
+            document.getElementById('lajur-count').innerText = currentL + 1; 
+            startTimer(); 
+            updateVisuals(); 
+        } else { 
+            showResult(); 
+        }
+    }
+
+    function showResult() {
+        clearInterval(timerRef);
+        document.getElementById('result-screen').style.display = 'block';
+        
+        const totalSemuaKerja = testData.reduce((a, b) => a + b.total, 0);
+        const totalSalah = testData.reduce((a, b) => a + b.wrong, 0);
+        const totalSkipped = testData.reduce((a, b) => a + b.skipped, 0);
+        const totalBenar = testData.reduce((a, b) => a + b.correct, 0);
+        const akurasi = totalSemuaKerja > 0 ? ((totalBenar / totalSemuaKerja) * 100).toFixed(1) : 0;
+        
+        const pankerVal = (totalSemuaKerja / TOTAL_KOLOM).toFixed(2);
+        let pankerCat = pankerVal >= 25 ? 'Baik Sekali' : (pankerVal >= 20 ? 'Baik' : (pankerVal >= 15 ? 'Sedang' : (pankerVal >= 10 ? 'Kurang' : 'Kurang Sekali')));
+
+        const workCounts = testData.map(d => d.total);
+        const meanWork = totalSemuaKerja / TOTAL_KOLOM;
+        const avgDeviation = (workCounts.reduce((acc, val) => acc + Math.abs(val - meanWork), 0) / TOTAL_KOLOM).toFixed(2);
+        let jankerCat = avgDeviation <= 1.5 ? 'Baik' : (avgDeviation <= 3.0 ? 'Sedang' : 'Kurang Sekali');
+
+        const y0 = workCounts.slice(0, 5).reduce((a,b)=>a+b,0) / 5;
+        const y50 = workCounts.slice(45, 50).reduce((a,b)=>a+b,0) / 5;
+        const hankerDiff = (y50 - y0).toFixed(2);
+        let hankerCat = hankerDiff >= 0 ? 'Meningkat / Stabil' : (hankerDiff >= -3 ? 'Cukup Bertahan' : 'Menurun (Kurang Sekali)');
+
+        const tiankerRange = Math.max(...workCounts) - Math.min(...workCounts);
+        let tiankerCat = tiankerRange <= 8 ? 'Baik' : (tiankerRange <= 15 ? 'Sedang' : 'Kurang');
+
+        document.getElementById('main-summary-body').innerHTML = `
+            <tr><td><b>PANKER (Speed Factor / Kecepatan Kerja)</b></td><td>Rata-rata: ${pankerVal} /kolom</td><td><span style="color:var(--accent-red);">${pankerCat}</span></td></tr>
+            <tr><td><b>JANKER (Rithme Factor / Keajegan Irama)</b></td><td>Avg Dev: ${avgDeviation}</td><td>${jankerCat}</td></tr>
+            <tr><td><b>HANKER (Ausdeur Factor / Ketahanan Kerja)</b></td><td>Selisih Akhir-Awal: ${hankerDiff}</td><td>${hankerCat}</td></tr>
+            <tr><td><b>TIANKER (Stabilitas / Range Kerja)</b></td><td>Range: ${tiankerRange}</td><td>${tiankerCat}</td></tr>
+            <tr class="category-row"><td><b>TOTAL PRODUKTIVITAS & AKURASI</b></td><td>Total Kerja: ${totalSemuaKerja} | Salah: ${totalSalah}</td><td>Akurasi: ${akurasi}%</td></tr>
+        `;
+        
+        testData.forEach((d, i) => {
+            const colAcc = d.total > 0 ? ((d.correct / d.total) * 100).toFixed(1) : 0;
+            document.getElementById('detail-lajur-body').innerHTML += `
+                <tr>
+                    <td>Kolom ${i+1}</td>
+                    <td>${d.total}</td>
+                    <td style="color:red">${d.wrong}</td>
+                    <td style="color:orange">${d.skipped}</td>
+                    <td>${d.correct}</td>
+                    <td>${colAcc}%</td>
+                </tr>`;
+        });
+        
+        document.getElementById('txt-kesimpulan').innerText = `Secara keseluruhan, Anda mampu menyelesaikan sekitar ${pankerVal} soal di setiap kolomnya dengan tingkat ketelitian atau kebenaran jawaban mencapai ${akurasi}%. Irama pengerjaan Anda tergolong ${jankerCat.toLowerCase()} (cukup stabil dan tidak terburu-buru), serta stamina atau ketahanan kerja Anda di akhir tes ${hankerDiff >= 0 ? 'masih terjaga dengan baik dan stabil' : 'mengalami sedikit penurunan karena kelelahan'}. Secara umum, performa Anda menunjukkan tingkat fokus dan tanggung jawab yang ${akurasi >= 85 ? 'sangat baik' : 'baik'} dalam menghadapi tekanan waktu.`;
+        
+        renderChart(workCounts);
+    }
+
+    function renderChart(dataVals) {
+        new Chart(document.getElementById('staminaChart'), {
+            type: 'line',
+            data: { 
+                labels: Array.from({length: 50}, (_, i) => i + 1), 
+                datasets: [{ 
+                    label: 'Jumlah Pekerjaan per Kolom', 
+                    data: dataVals, 
+                    borderColor: '#c0392b', 
+                    backgroundColor: 'rgba(192, 57, 43, 0.1)',
+                    fill: true, 
+                    tension: 0.2,
+                    borderWidth: 2
+                }] 
+            },
+            options: { 
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f1f2f6' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function downloadPDF() { 
+        html2pdf().from(document.getElementById('pdf-content')).save('Laporan_Hasil_Tes_Kreaplin_PRC.pdf'); 
+    }
+
+    const kp = document.getElementById('keypad'), dragArea = document.getElementById('drag-area');
+    let isDragging = false, startX, startY, initialLeft, initialTop;
+    dragArea.onmousedown = (e) => { isDragging = true; startX = e.clientX; startY = e.clientY; initialLeft = kp.offsetLeft; initialTop = kp.offsetTop; kp.style.right = 'auto'; };
+    document.onmousemove = (e) => { if (!isDragging) return; kp.style.left = (initialLeft + (e.clientX - startX)) + 'px'; kp.style.top = (initialTop + (e.clientY - startY)) + 'px'; };
+    document.onmouseup = () => isDragging = false;
+    
+    document.addEventListener('keydown', (e) => { 
+        if(e.key >= '0' && e.key <= '9') inputAnswer(parseInt(e.key)); 
+    });
+</script>
+</body>
+</html>
