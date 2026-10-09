@@ -271,6 +271,7 @@ flex-direction:column;
 justify-content:center;
 position: relative;
 overflow: hidden;
+text-decoration: none;
 }
 
 .menu-card::after {
@@ -380,6 +381,18 @@ margin-top: 40px;
 </div>
 </div>
 
+<!-- KATEGORI INTELEGENSI TNI (DI POSISI PALING ATAS: MENU UTAMA KE FOLDER) -->
+<div class="cat-wrapper">
+<div class="cat-title">INTELEGENSI TNI</div>
+<div class="menu-grid">
+<a href="https://personaresearchconsulting-alt.github.io/INTELEGENSI-TNI-BLIT/" class="menu-card">
+<span>🧠 TES INTELEGENSI TNI</span>
+<small>Akses menu utama folder intelegensi TNI yang mencakup sub-tes 1, sub-tes 2, dan sub-tes 3.</small>
+</a>
+</div>
+</div>
+
+<!-- KATEGORI LAINNYA -->
 <div class="cat-wrapper">
 <div class="cat-title">Daftar Simulasi Latihan Instrumen</div>
 <div class="menu-grid">
@@ -437,8 +450,6 @@ margin-top: 40px;
 <span>🧠 TES VERBAL</span>
 <small>Mengukur logika berfikir dalam bentuk kata.</small>
 </div>
-
-
 </div>
 </div>
 </section>
@@ -523,7 +534,7 @@ e.preventDefault();
 }
 });
 
-document.querySelectorAll(".menu-card").forEach(card=>{
+document.querySelectorAll(".menu-card[data-link]").forEach(card=>{
 card.addEventListener("click",()=>{
 const target=card.getAttribute("data-link");
 if(target) window.location.href=target;
